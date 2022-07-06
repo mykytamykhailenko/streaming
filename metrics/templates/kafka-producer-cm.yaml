@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kafka-producer-cm
+  labels:
+    kafka: kafka-producer-cm
+data:
+  DISPERSION: "500"
+  SPEED: "2000"
+  CLUSTERS: "2"
+  MACHINES: "2"
+  BATCH_SIZE: "16384"
+  LINGER: "0"

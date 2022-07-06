@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kafka-consumer-cm
+  labels:
+    kafka: kafka-consumer-cm
+data:
+  KAFKA_APP_ID: "resource-metrics-kafka-consumer"
+  KAFKA_STATE: "/home/kafka/store"
+  KAFKA_GRACE_PERIOD: "3000"

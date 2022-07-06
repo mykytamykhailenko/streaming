@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spark-consumer-cm
+  labels:
+    kafka: spark-consumer-cm
+data:
+  SPARK_KAFKA_GROUP_ID: "spark-resource-metrics-consumer"
+  SPARK_KAFKA_TOPIC: "spark-total-resource-metrics"
+  SPARK_WMK_MS: "10000"
+  SPARK_CP_LOC: "/home/kafka/store"

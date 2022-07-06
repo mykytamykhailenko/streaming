@@ -1,0 +1,70 @@
+{{- range $platform, $info := .Values.consumer }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $platform }}-consumer-svc
+  labels:
+    kafka: {{ $platform }}-consumer-svc
+spec:
+  clusterIP: None
+  selector:
+    kafka: {{ $platform }}-consumer-po
+  ports:
+    - port: {{ $.Values.kafka.port }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $platform }}-consumer-sts
+  labels:
+    kafka: {{ $platform }}-consumer-sts
+spec:
+  replicas: {{ $info.replicas }}
+  serviceName: {{ $platform }}-consumer-svc
+  selector:
+    matchLabels:
+      kafka: {{ $platform }}-consumer-po
+  template:
+    metadata:
+      labels:
+        kafka: {{ $platform }}-consumer-po
+    spec:
+      containers:
+        - name: {{ $platform }}-consumer
+          image: {{ cat "kafka:" $platform | nospace | toYaml }}
+          imagePullPolicy: Never
+          {{- with $.Values.kafka }}
+          env:
+            - name: KAFKA_SERVERS
+              value: {{ cat .clusterName "-kafka-bootstrap:" .port | nospace | toYaml }}
+            - name: KAFKA_TOPIC
+              value: {{ .sourceTopic }}
+          {{- end }}
+          envFrom:
+            - configMapRef:
+                name: {{ $platform }}-consumer-cm
+            - configMapRef:
+                name: kafka-consumer-cm
+            - configMapRef:
+                name: window-cm
+          volumeMounts:
+            - name: {{ $platform }}-consumer-pvc
+              mountPath: /home/kafka/store
+  {{- with $.Values.persistentVolumeClaim.retentionPolicy }}
+  persistentVolumeClaimRetentionPolicy: # minikube start --feature-gates=StatefulSetAutoDeletePVC=true
+    whenDeleted: {{ .whenDeleted }}
+    whenScaled: {{ .whenScaled }}
+  {{- end }}
+  volumeClaimTemplates:
+    - metadata:
+        name: {{ $platform }}-consumer-pvc
+        labels:
+          kafka: {{ $platform }}-consumer-pvc
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 128Mi
+{{- end }}

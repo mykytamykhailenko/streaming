@@ -1,0 +1,27 @@
+kafka:
+  clusterName: "kafka-cluster"
+  port: "9092"
+  sourceTopic: "resource-metrics"
+
+consumer:
+  kafka:
+    replicas: 1
+    configmap: "kafka-consumer-cm"
+  flink:
+    replicas: 1
+    configmap: "flink-consumer-cm"
+  spark:
+    replicas: 1
+    configmap: "spark-consumer-cm"
+
+producer:
+  partitions: 3
+  configmap: "kafka-producer-cm"
+
+persistentVolumeClaim:
+  retentionPolicy:
+    whenDeleted: "Delete"
+    whenScaled: "Retain"
+
+
+topic: "resource-metrics"

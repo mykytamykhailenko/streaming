@@ -1,0 +1,35 @@
+{{- range (.Values.producer.partitions | int | until) }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-producer-deploy-{{ . }}-partition
+  labels:
+    kafka: kafka-producer-deploy-{{ . }}-partition
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      kafka: kafka-producer-po-{{ . }}-partition
+  template:
+    metadata:
+      labels:
+        kafka: kafka-producer-po-{{ . }}-partition
+    spec:
+      containers:
+        - name: kafka-producer
+          image: kafka:producer
+          imagePullPolicy: Never
+          {{- with $.Values.kafka }}
+          env:
+            - name: KAFKA_SERVERS
+              value: {{ cat .clusterName "-kafka-bootstrap:" .port | nospace | toYaml }}
+            - name: KAFKA_TOPIC
+              value: {{ .sourceTopic | quote }}
+            - name: PARTITION
+              value: {{ . | quote }}
+          {{- end }}
+          envFrom:
+            - configMapRef:
+                name: {{ $.Values.producer.configmap }}
+{{- end }}

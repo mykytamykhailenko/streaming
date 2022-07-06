@@ -1,0 +1,17 @@
+# IntelliJ IDEA files.
+.bsp
+.idea
+
+# SBT artifacts.
+jars
+
+# Contains compile dependencies.
+**/target
+
+# Root project.
+project/project
+
+kafka.env
+
+README.md
+

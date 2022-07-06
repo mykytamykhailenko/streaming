@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: flink-consumer-cm
+  labels:
+    kafka: flink-consumer-cm
+data:
+  FLINK_ALLOWED_LATENESS: "1000"
+  FLINK_MAX_OUT_OF_ORDER: "5000"
+  FLINK_AUTO_WMK_INT: "100"
+  FLINK_IDLENESS: "3000"
+  FLINK_GROUP_ID: "flink"
+  FLINK_TRX_ID_PREFIX: "flink"
+  FLINK_CP_STORAGE: "file:///home/kafka/store"
+  FLINK_CP: "5000"
+  FLINK_CP_TIMEOUT: "10000"
+  FLINK_CP_PAUSE: "1000"
+  FLINK_CP_TOL_NUM: "0"
+  FLINK_KAFKA_GROUP_ID: "flink-resource-metrics-consumer"
+  FLINK_KAFKA_TRX_TIMEOUT: "5000"
