@@ -22,8 +22,8 @@ case class SparkPipeline @Inject()(winConf: TWinConf, sparkConf: TSparkConf) ext
     source
       .select(
         col("timestamp"),
-        deserializeMachineUDF(col("key")).as("machine"),
-        deserializeMetricsUDF(col("value")).as("metrics"))
+        col("key").as("machine"),
+        deserializeMetrics(col("value")).as("metrics"))
       .withWatermark("timestamp", ofMilliseconds(sparkWatermark))
       .groupBy(
         window(
@@ -32,16 +32,12 @@ case class SparkPipeline @Inject()(winConf: TWinConf, sparkConf: TSparkConf) ext
           ofMilliseconds(windowStep)),
         col("machine"))
       .agg(
-        combineMetricsUDF(
+        combineMetrics(
           col("metrics.cpu"),
           col("metrics.ram")).alias("metrics"))
       .select(
-        serializeMachineWindowedUDF(
-          struct(
-            col("window.start").cast(LongType).as("start"),
-            col("window.end").cast(LongType).as("end"),
-            col("machine.cluster").as("cluster"),
-            col("machine.machine").as("machine"))).as("key"),
-        serializeMetricsUDF(col("metrics")).as("value"))
+        col("window.start").as("timestamp"),
+        col("machine").as("key"),
+        serializeMetrics(col("metrics")).as("value"))
   }
 }

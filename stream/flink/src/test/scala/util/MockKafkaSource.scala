@@ -1,19 +1,13 @@
 package util
 
-import model.{Machine, Metrics}
+import flink.util.Util.EventTime
+import model.Metrics
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.watermark.Watermark
-import util.MockKafkaSource.EventTime
 
-object MockKafkaSource {
+case class MockKafkaSource(records: Seq[(EventTime, String, Metrics)]) extends SourceFunction[(String, Metrics)] {
 
-  type EventTime = Long
-
-}
-
-case class MockKafkaSource(records: Seq[(EventTime, Machine, Metrics)]) extends SourceFunction[(Machine, Metrics)] {
-
-  def run(context: SourceFunction.SourceContext[(Machine, Metrics)]): Unit =
+  def run(context: SourceFunction.SourceContext[(String, Metrics)]): Unit =
     for {
       (eventTime, machine, metrics) <- records
     } yield {

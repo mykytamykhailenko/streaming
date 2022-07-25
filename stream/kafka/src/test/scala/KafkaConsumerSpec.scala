@@ -4,9 +4,9 @@ import org.apache.kafka.streams.{TestInputTopic, TestOutputTopic, TopologyTestDr
 import org.mockito.MockitoSugar.{mock, when}
 import org.specs2.matcher.Matchers
 import org.specs2.mutable.Specification
-import pipeline.KafkaPipeline
 import io.github.azhur.kafkaserdeplayjson.PlayJsonSupport._
-import model.{Machine, MachineWindowed, Metrics}
+import kafka.pipeline.KafkaPipeline
+import model.Metrics
 import org.apache.kafka.common.serialization.{Deserializer, Serializer}
 import org.apache.kafka.streams.test.TestRecord
 
@@ -22,10 +22,10 @@ class KafkaConsumerSpec extends Specification with Matchers {
 
   def getDeserializerOf[T](implicit e: Deserializer[T]): Deserializer[T] = e
 
-  def createTopics(driver: TopologyTestDriver): (TestInputTopic[Machine, Metrics], TestOutputTopic[MachineWindowed, Metrics]) = {
+  def createTopics(driver: TopologyTestDriver): (TestInputTopic[String, Metrics], TestOutputTopic[String, Metrics]) = {
 
-    val in = driver.createInputTopic(inputTopicName, getSerializerOf[Machine], getSerializerOf[Metrics])
-    val out = driver.createOutputTopic(outputTopicName, getDeserializerOf[MachineWindowed], getDeserializerOf[Metrics])
+    val in = driver.createInputTopic(inputTopicName, getSerializerOf[String], getSerializerOf[Metrics])
+    val out = driver.createOutputTopic(outputTopicName, getDeserializerOf[String], getDeserializerOf[Metrics])
 
     (in, out)
   }
@@ -48,11 +48,11 @@ class KafkaConsumerSpec extends Specification with Matchers {
       val (in, out) = createTopics(driver)
 
       val inputEvents = Seq(
-        (Machine("cluster", "machine"), Metrics(1, 1), 10L),
-        (Machine("cluster", "machine"), Metrics(1, 1), 50L),
-        (Machine("cluster", "machine"), Metrics(1, 1), 20L),
-        (Machine("cluster", "machine"), Metrics(1, 1), 60L),
-        (Machine("advance", "advance"), Metrics(-1, -1), 1000L))
+        ("machine", Metrics(1, 1), 10L),
+        ("machine", Metrics(1, 1), 50L),
+        ("machine", Metrics(1, 1), 20L),
+        ("machine", Metrics(1, 1), 60L),
+        ("advance", Metrics(-1, -1), 1000L))
         .map { case (machine, metrics, instant) =>
           new TestRecord(machine, metrics, Instant.ofEpochMilli(instant))
         }
@@ -61,14 +61,14 @@ class KafkaConsumerSpec extends Specification with Matchers {
 
       val outputEvents = out.readRecordsToList().asScala
 
-      outputEvents.map(testRecord => (testRecord.key(), testRecord.value())) === Seq(
-        (MachineWindowed(0, 30, "cluster", "machine"), Metrics(2, 2)), // This window includes an out-of-order event (20L).
-        (MachineWindowed(10, 40, "cluster", "machine"), Metrics(2, 2)),
-        (MachineWindowed(20, 50, "cluster", "machine"), Metrics(1, 1)),
-        (MachineWindowed(30, 60, "cluster", "machine"), Metrics(1, 1)),
-        (MachineWindowed(40, 70, "cluster", "machine"), Metrics(2, 2)),
-        (MachineWindowed(50, 80, "cluster", "machine"), Metrics(2, 2)),
-        (MachineWindowed(60, 90, "cluster", "machine"), Metrics(1, 1))
+      outputEvents.map(testRecord => (testRecord.timestamp().longValue(), testRecord.key(), testRecord.value())) === Seq(
+        (0,  "machine", Metrics(2, 2)), // This window includes an out-of-order event (20L).
+        (10, "machine", Metrics(2, 2)),
+        (20, "machine", Metrics(1, 1)),
+        (30, "machine", Metrics(1, 1)),
+        (40, "machine", Metrics(2, 2)),
+        (50, "machine", Metrics(2, 2)),
+        (60, "machine", Metrics(1, 1))
       )
     }
   }

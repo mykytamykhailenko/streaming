@@ -1,7 +1,7 @@
 import config.spark.TSparkConf
 import config.window.TWinConf
 import io.github.azhur.kafkaserdeplayjson.PlayJsonSupport._
-import model.{Machine, MachineWindowed, Metrics}
+import model.Metrics
 import org.apache.spark.sql.{SQLContext, SparkSession}
 import org.apache.spark.sql.execution.streaming.MemoryStream
 import udf.UDFs._
@@ -38,22 +38,24 @@ class SparkConsumerSpec extends Specification with Matchers {
       import spark.implicits._
 
       val events = Seq(
-        (10L, Machine("cluster", "machine"), Metrics(1, 1)),
-        (50L, Machine("cluster", "machine"), Metrics(1, 1)),
-        (20L, Machine("cluster", "machine"), Metrics(1, 1)),
-        (60L, Machine("cluster", "machine"), Metrics(1, 1)),
-        (90L, Machine("advance", "watermark"), Metrics(1, 1)))
+        (10L, "machine", Metrics(1, 1)),
+        (50L, "machine", Metrics(1, 1)),
+        (20L, "machine", Metrics(1, 1)),
+        (60L, "machine", Metrics(1, 1)),
+        (90L, "watermark", Metrics(1, 1)))
 
       val serializedEvents = events.map { case (timestamp, machine, metrics) =>
-        (Timestamp.from(Instant.ofEpochSecond(timestamp)), serialize(machine), serialize(metrics))
+        (Timestamp.from(Instant.ofEpochSecond(timestamp)), machine.getBytes, serialize(metrics))
       }
 
-      val stream = MemoryStream[(Timestamp, Array[Byte], Array[Byte])]
+      val testDataStream = MemoryStream[(Timestamp, Array[Byte], Array[Byte])]
 
-      val offset = stream.addData(serializedEvents)
+      val offset = testDataStream.addData(serializedEvents)
+
+      val timestampedTestDataStream = testDataStream.toDF().toDF("timestamp", "key", "value")
 
       SparkPipeline(winConfMock, sparkConfMock)
-        .build(stream.toDF().toDF("timestamp", "key", "value"))
+        .build(timestampedTestDataStream)
         .writeStream
         .format("memory")
         .queryName("out")
@@ -61,24 +63,25 @@ class SparkConsumerSpec extends Specification with Matchers {
         .start
         .processAllAvailable()
 
-      stream.commit(offset)
+      testDataStream.commit(offset)
 
       val output =
         spark
           .sql("select * from out")
           .select(
-            deserializeMachineWindowedUDF($"key").as("machine_windowed"),
-            deserializeMetricsUDF($"value").as("metrics"))
-          .as[(MachineWindowed, Metrics)]
+            $"timestamp",
+            $"key".as("machine"),
+            deserializeMetrics($"value").as("metrics"))
+          .as[(Long, String, Metrics)]
           .collect()
           .toSet
 
       output === Set(
-        (MachineWindowed(-10, 20, "cluster", "machine"), Metrics(1, 1)),
-        (MachineWindowed(0, 30, "cluster", "machine"), Metrics(2, 2)),
-        (MachineWindowed(10, 40, "cluster", "machine"), Metrics(2, 2)),
-        (MachineWindowed(20, 50, "cluster", "machine"), Metrics(1, 1)),
-        (MachineWindowed(30, 60, "cluster", "machine"), Metrics(1, 1)))
+        (-10, "machine", Metrics(1, 1)),
+        (0, "machine", Metrics(2, 2)),
+        (10, "machine", Metrics(2, 2)),
+        (20, "machine", Metrics(1, 1)),
+        (30, "machine", Metrics(1, 1)))
     }
   }
 

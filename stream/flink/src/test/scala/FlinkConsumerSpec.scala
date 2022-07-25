@@ -1,7 +1,7 @@
 import config.flink.TFlinkConf
 import config.window.TWinConf
-import pipeline.FlinkPipeline
-import model.{Machine, MachineWindowed, Metrics}
+import flink.pipeline.FlinkPipeline
+import model.Metrics
 import org.apache.flink.api.scala.createTypeInformation
 import org.apache.flink.runtime.testutils.MiniClusterResourceConfiguration
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
@@ -28,23 +28,25 @@ class FlinkConsumerSpec extends Specification with Matchers {
     val flinkConfMock = mock[TFlinkConf]
     when(flinkConfMock.allowedLatenessMS).thenReturn(3)
 
+    val lag = winConfMock.windowStep - 1
+
     "account for out of order events" in {
 
       val env = StreamExecutionEnvironment.getExecutionEnvironment
 
       val eventSource = MockKafkaSource(Seq(
-        (1L, Machine("Cluster", "Machine"), Metrics(1, 1)),
-        (2L, Machine("Cluster", "Machine"), Metrics(2, 2)),
-        (5L, Machine("Cluster", "Machine"), Metrics(5, 5)),
-        (6L, Machine("Cluster", "Machine"), Metrics(6, 6)),
-        (3L, Machine("Cluster", "Machine"), Metrics(3, 3)),
-        (4L, Machine("Cluster", "Machine"), Metrics(4, 4)),
-        (7L, Machine("Cluster", "Machine"), Metrics(7, 7))))
+        (1L, "Machine", Metrics(1, 1)),
+        (2L, "Machine", Metrics(2, 2)),
+        (5L, "Machine", Metrics(5, 5)),
+        (6L, "Machine", Metrics(6, 6)),
+        (3L, "Machine", Metrics(3, 3)),
+        (4L, "Machine", Metrics(4, 4)),
+        (7L, "Machine", Metrics(7, 7))))
 
       val mockSource = env.addSource(eventSource)
       val mockSink = MockKafkaSink(accumulatorName = "a1")
 
-      new FlinkPipeline(winConfMock, flinkConfMock).build(() => mockSource, _.addSink(mockSink))
+      new FlinkPipeline(winConfMock, flinkConfMock).build(mockSource, _.addSink(mockSink))
 
       val job = env.execute()
 
@@ -52,11 +54,11 @@ class FlinkConsumerSpec extends Specification with Matchers {
       // So when an out-of-order event comes, it can update the result of the window it belongs to.
       // Meaning we can observe a few duplicates, like here (3, 6).
       mockSink.getResults(job) === Set(
-        (MachineWindowed(0, 3, "Cluster", "Machine"), Metrics(3, 3)),
-        (MachineWindowed(3, 6, "Cluster", "Machine"), Metrics(5, 5)),
-        (MachineWindowed(3, 6, "Cluster", "Machine"), Metrics(8, 8)),
-        (MachineWindowed(3, 6, "Cluster", "Machine"), Metrics(12, 12)),
-        (MachineWindowed(6, 9, "Cluster", "Machine"), Metrics(13, 13))
+        (0 + lag, "Machine", Metrics(3, 3)),
+        (3 + lag, "Machine", Metrics(5, 5)),
+        (3 + lag, "Machine", Metrics(8, 8)),
+        (3 + lag, "Machine", Metrics(12, 12)),
+        (6 + lag, "Machine", Metrics(13, 13))
       )
     }
 
@@ -65,29 +67,29 @@ class FlinkConsumerSpec extends Specification with Matchers {
       val env = StreamExecutionEnvironment.getExecutionEnvironment
 
       val eventSource = MockKafkaSource(Seq(
-        (1L, Machine("Cluster", "M1"), Metrics(1, 1)),
-        (2L, Machine("Cluster", "M1"), Metrics(2, 2)),
-        (3L, Machine("Cluster", "M2"), Metrics(5, 5)),
-        (4L, Machine("Cluster", "M1"), Metrics(6, 6)),
-        (5L, Machine("Cluster", "M2"), Metrics(3, 3)),
-        (6L, Machine("Cluster", "M1"), Metrics(4, 4)),
-        (7L, Machine("Cluster", "M2"), Metrics(7, 7))))
+        (1L, "M1", Metrics(1, 1)),
+        (2L, "M1", Metrics(2, 2)),
+        (3L, "M2", Metrics(5, 5)),
+        (4L, "M1", Metrics(6, 6)),
+        (5L, "M2", Metrics(3, 3)),
+        (6L, "M1", Metrics(4, 4)),
+        (7L, "M2", Metrics(7, 7))))
 
       val mockSource = env.addSource(eventSource)
       val mockSink = MockKafkaSink(accumulatorName = "a2")
 
       // Could be created by scala-guice, but the configuration may change from test to test.
       // So it is not a good idea.
-      new FlinkPipeline(winConfMock, flinkConfMock).build(() => mockSource, _.addSink(mockSink))
+      new FlinkPipeline(winConfMock, flinkConfMock).build(mockSource, _.addSink(mockSink))
 
       val job = env.execute()
 
       mockSink.getResults(job) === Set(
-        (MachineWindowed(0, 3, "Cluster", "M1"), Metrics(3, 3)),
-        (MachineWindowed(3, 6, "Cluster", "M1"), Metrics(6, 6)),
-        (MachineWindowed(3, 6, "Cluster", "M2"), Metrics(8, 8)),
-        (MachineWindowed(6, 9, "Cluster", "M1"), Metrics(4, 4)),
-        (MachineWindowed(6, 9, "Cluster", "M2"), Metrics(7, 7))
+        (0 + lag, "M1", Metrics(3, 3)),
+        (3 + lag, "M1", Metrics(6, 6)),
+        (3 + lag, "M2", Metrics(8, 8)),
+        (6 + lag, "M1", Metrics(4, 4)),
+        (6 + lag, "M2", Metrics(7, 7))
       )
     }
 

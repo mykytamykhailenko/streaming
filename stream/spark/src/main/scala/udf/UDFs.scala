@@ -1,7 +1,7 @@
 package udf
 
 import io.github.azhur.kafkaserdeplayjson.PlayJsonSupport._
-import model.{Machine, MachineWindowed, Metrics}
+import model.Metrics
 import org.apache.kafka.common.serialization.{Deserializer, Serializer}
 import org.apache.spark.sql.{Encoder, Encoders}
 import org.apache.spark.sql.expressions.{Aggregator, UserDefinedFunction}
@@ -15,17 +15,9 @@ object UDFs {
 
   def deserialize[T](vs: Array[Byte])(implicit des: Deserializer[T]): T = des.deserialize(topicless, vs)
 
-  val deserializeMachineUDF: UserDefinedFunction = udf(deserialize[Machine] _)
+  val deserializeMetrics: UserDefinedFunction = udf(deserialize[Metrics] _)
 
-  val deserializeMetricsUDF: UserDefinedFunction = udf(deserialize[Metrics] _)
-
-  val deserializeMachineWindowedUDF: UserDefinedFunction = udf(deserialize[MachineWindowed] _)
-
-  val serializeMachineUDF: UserDefinedFunction = udf(serialize(_: Machine))
-
-  val serializeMetricsUDF: UserDefinedFunction = udf(serialize(_: Metrics))
-
-  val serializeMachineWindowedUDF: UserDefinedFunction = udf(serialize(_: MachineWindowed))
+  val serializeMetrics: UserDefinedFunction = udf(serialize(_: Metrics))
 
   object MetricsAggregator extends Aggregator[Metrics, Option[Metrics], Metrics] {
     override def zero: Option[Metrics] = None
@@ -43,7 +35,7 @@ object UDFs {
     override def outputEncoder: Encoder[Metrics] = Encoders.product[Metrics]
   }
 
-  val combineMetricsUDF: UserDefinedFunction = udaf(MetricsAggregator)
+  val combineMetrics: UserDefinedFunction = udaf(MetricsAggregator)
 
 
 }

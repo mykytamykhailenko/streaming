@@ -2,8 +2,8 @@ import com.google.inject.Guice
 import config.kafka.TKafkaConf
 import config.producer.TProducerConf
 import io.github.azhur.kafkaserdeplayjson.PlayJsonSupport.toSerializer
-import model.{Machine, Metrics}
-import org.apache.kafka.clients.producer.{KafkaProducer, ProducerConfig}
+import model.Metrics
+import org.apache.kafka.clients.producer.{KafkaProducer, ProducerConfig, ProducerRecord}
 import org.apache.kafka.common.serialization.Serializer
 
 import java.util.Properties
@@ -45,11 +45,11 @@ class Producer @Inject() (kafkaConf: TKafkaConf, producerConf: TProducerConf, ut
     // How many times the producer retries the request.
     // props.put(ProducerConfig.RETRIES_CONFIG, Int.MaxValue)
 
-    val machineSerializer = implicitly[Serializer[Machine]]
+    val machineSerializer = implicitly[Serializer[String]]
     val metricsSerializer = implicitly[Serializer[Metrics]]
 
     // Producers can be freely shared between threads.
-    val producer = new KafkaProducer[Machine, Metrics](props, machineSerializer, metricsSerializer)
+    val producer = new KafkaProducer[String, Metrics](props, machineSerializer, metricsSerializer)
 
     import util._
 

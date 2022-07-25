@@ -1,4 +1,4 @@
-package pipeline
+package kafka.pipeline
 
 import com.google.inject.ImplementedBy
 import org.apache.kafka.streams.Topology

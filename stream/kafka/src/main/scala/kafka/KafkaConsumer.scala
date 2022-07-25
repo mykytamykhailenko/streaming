@@ -1,10 +1,12 @@
+package kafka
+
 import com.google.inject.Guice
 import config.kafka.TKafkaConf
 import config.window.TWinConf
+import kafka.pipeline.TKafkaPipeline
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.common.IsolationLevel
 import org.apache.kafka.streams.{KafkaStreams, StreamsConfig}
-import pipeline.TKafkaPipeline
 
 import java.util.Properties
 import javax.inject.Inject

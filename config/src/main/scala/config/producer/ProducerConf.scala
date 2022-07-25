@@ -6,8 +6,6 @@ class ProducerConf extends TProducerConf {
 
   private val config: TypesafeConfig = ConfigFactory.load()
 
-  lazy val clusterNum: Int = config.getInt("producer.cluster.num")
-
   lazy val machineNum: Int = config.getInt("producer.machine.num")
 
   lazy val speed: Int = config.getInt("producer.speed.ms")

@@ -1,5 +1,5 @@
 import config.kafka.TKafkaConf
-import model.{Machine, Metrics}
+import model.Metrics
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 
 import scala.annotation.tailrec
@@ -13,28 +13,20 @@ class Utils @Inject() (kafkaConf: TKafkaConf, producerConfig: TProducerConf) {
   import producerConfig._
   import kafkaConf._
 
-  def randomName(): String = Random.alphanumeric.take(5).mkString("")
-
   def randomBigDecimal(): BigDecimal = BigDecimal(Random.nextInt(90) + 10)
 
   def randomMetrics(): Metrics = Metrics(randomBigDecimal(), randomBigDecimal())
 
   def randDuration() = speed + (if (dispersion != 0) Random.nextInt() % dispersion else 0)
 
-  def getRandomMachines(): Seq[Machine] = {
-
-    val clusterNames = for {
-      _ <- 1 to clusterNum
-    } yield randomName()
-
+  def getRandomMachines(): Seq[String] = {
     for {
-      cluster <- clusterNames
       _ <- 1 to machineNum
-    } yield Machine(cluster, randomName())
+    } yield Random.alphanumeric.take(5).mkString("")
   }
 
   @tailrec
-  final def produceRecords(producer: KafkaProducer[Machine, Metrics], machine: Machine): Unit = {
+  final def produceRecords(producer: KafkaProducer[String, Metrics], machine: String): Unit = {
     Thread.sleep(randDuration())
     producer.send(new ProducerRecord(kafkaTopic, machine, randomMetrics()))
     produceRecords(producer, machine)
