@@ -1,11 +1,10 @@
 package udf
 
 import io.github.azhur.kafkaserdeplayjson.PlayJsonSupport._
-import model.{AverageMetrics, Metrics}
+import model.Metrics
 import org.apache.kafka.common.serialization.{Deserializer, Serializer}
-import org.apache.spark.sql.{Encoder, Encoders}
-import org.apache.spark.sql.expressions.{Aggregator, UserDefinedFunction}
-import org.apache.spark.sql.functions.{udaf, udf}
+import org.apache.spark.sql.expressions.UserDefinedFunction
+import org.apache.spark.sql.functions.udf
 
 object UDFs {
 

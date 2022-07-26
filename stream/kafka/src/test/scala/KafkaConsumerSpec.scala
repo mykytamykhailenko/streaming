@@ -1,14 +1,11 @@
-import config.kafka.TKafkaConf
-import config.window.TWinConf
-import org.apache.kafka.streams.{TestInputTopic, TestOutputTopic, TopologyTestDriver}
-import org.mockito.MockitoSugar.{mock, when}
-import org.specs2.matcher.Matchers
-import org.specs2.mutable.Specification
 import io.github.azhur.kafkaserdeplayjson.PlayJsonSupport._
 import kafka.pipeline.KafkaPipeline
 import model.Metrics
 import org.apache.kafka.common.serialization.{Deserializer, Serializer}
 import org.apache.kafka.streams.test.TestRecord
+import org.apache.kafka.streams.{TestInputTopic, TestOutputTopic, TopologyTestDriver}
+import org.specs2.matcher.Matchers
+import org.specs2.mutable.Specification
 
 import java.time.Instant
 import scala.jdk.CollectionConverters.{collectionAsScalaIterableConverter, seqAsJavaListConverter}
@@ -32,16 +29,9 @@ class KafkaConsumerSpec extends Specification with Matchers {
 
   "kafka consumer" should {
 
-    val winConfMock = mock[TWinConf]
-    when(winConfMock.windowSize).thenReturn(30)
-    when(winConfMock.windowStep).thenReturn(10)
-
-    val kafkaConfMock = mock[TKafkaConf]
-    when(kafkaConfMock.gracePeriod).thenReturn(30)
-
     "handle out-of-order events (and emit records only for closed windows)" in {
 
-      val topology = new KafkaPipeline(winConfMock, kafkaConfMock).build(inputTopicName, outputTopicName)
+      val topology = new KafkaPipeline().build(inputTopicName, outputTopicName)
 
       val driver = new TopologyTestDriver(topology)
 
@@ -62,7 +52,7 @@ class KafkaConsumerSpec extends Specification with Matchers {
       val outputEvents = out.readRecordsToList().asScala
 
       outputEvents.map(testRecord => (testRecord.timestamp().longValue(), testRecord.key(), testRecord.value())) === Seq(
-        (0,  "machine", Metrics(2, 2)), // This window includes an out-of-order event (20L).
+        (0, "machine", Metrics(2, 2)), // This window includes an out-of-order event (20L).
         (10, "machine", Metrics(2, 2)),
         (20, "machine", Metrics(3, 3)),
         (30, "machine", Metrics(5, 5)),

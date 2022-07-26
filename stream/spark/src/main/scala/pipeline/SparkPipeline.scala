@@ -1,21 +1,17 @@
 package pipeline
 
-import config.spark.TSparkConf
-import config.window.TWinConf
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.functions.{avg, col, struct, window}
-import org.apache.spark.sql.types.LongType
 import udf.UDFs._
 
 import javax.inject.Inject
 
-case class SparkPipeline @Inject()(winConf: TWinConf, sparkConf: TSparkConf) extends TSparkPipeline {
+case class SparkPipeline @Inject() () extends TSparkPipeline {
 
   def build(source: DataFrame): DataFrame = {
     require(source.isStreaming, "The source must be streaming.")
 
-    import winConf._
-    import sparkConf._
+    import conf.SparkConf._
 
     def ofMilliseconds(milliSeconds: Long): String = s"$milliSeconds milliseconds"
 
@@ -24,7 +20,7 @@ case class SparkPipeline @Inject()(winConf: TWinConf, sparkConf: TSparkConf) ext
         col("timestamp"),
         col("key").as("machine"),
         deserializeMetrics(col("value")).as("metrics"))
-      .withWatermark("timestamp", ofMilliseconds(sparkWatermark))
+      .withWatermark("timestamp", ofMilliseconds(watermark))
       .groupBy(
         window(
           col("timestamp"),

@@ -1,14 +1,11 @@
-import config.spark.TSparkConf
-import config.window.TWinConf
 import io.github.azhur.kafkaserdeplayjson.PlayJsonSupport._
 import model.Metrics
-import org.apache.spark.sql.{SQLContext, SparkSession}
 import org.apache.spark.sql.execution.streaming.MemoryStream
-import udf.UDFs._
-import org.mockito.MockitoSugar.{mock, when}
+import org.apache.spark.sql.{SQLContext, SparkSession}
 import org.specs2.matcher.Matchers
 import org.specs2.mutable.Specification
 import pipeline.SparkPipeline
+import udf.UDFs._
 
 import java.sql.Timestamp
 import java.time.Instant
@@ -23,13 +20,6 @@ class SparkConsumerSpec extends Specification with Matchers {
         .getOrCreate()
 
     spark.sparkContext.setLogLevel("ERROR")
-
-    val winConfMock = mock[TWinConf]
-    when(winConfMock.windowSize).thenReturn(30000)
-    when(winConfMock.windowStep).thenReturn(10000)
-
-    val sparkConfMock = mock[TSparkConf]
-    when(sparkConfMock.sparkWatermark).thenReturn(30000)
 
     "handle out-of-order events" in {
 
@@ -54,7 +44,7 @@ class SparkConsumerSpec extends Specification with Matchers {
 
       val timestampedTestDataStream = testDataStream.toDF().toDF("timestamp", "key", "value")
 
-      SparkPipeline(winConfMock, sparkConfMock)
+      SparkPipeline()
         .build(timestampedTestDataStream)
         .writeStream
         .format("memory")

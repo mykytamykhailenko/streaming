@@ -1,13 +1,10 @@
-import config.flink.TFlinkConf
-import config.window.TWinConf
+import flink.conf.FlinkConf
 import flink.pipeline.FlinkPipeline
-import flink.util.Util.EventTime
 import model.Metrics
 import org.apache.flink.api.scala.createTypeInformation
 import org.apache.flink.runtime.testutils.MiniClusterResourceConfiguration
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.apache.flink.test.util.MiniClusterWithClientResource
-import org.mockito.MockitoSugar.{mock, when}
 import org.specs2.matcher.Matchers
 import org.specs2.mutable.Specification
 import util.{MockKafkaSink, MockKafkaSource}
@@ -22,14 +19,7 @@ class FlinkConsumerSpec extends Specification with Matchers {
 
   "flink consumer" should {
 
-    val winConfMock = mock[TWinConf]
-    when(winConfMock.windowSize).thenReturn(3)
-    when(winConfMock.windowStep).thenReturn(3)
-
-    val flinkConfMock = mock[TFlinkConf]
-    when(flinkConfMock.allowedLatenessMS).thenReturn(3)
-
-    val lag = winConfMock.windowStep - 1
+    val lag = FlinkConf.windowStep - 1
 
     "account for out of order events" in {
 
@@ -47,7 +37,7 @@ class FlinkConsumerSpec extends Specification with Matchers {
       val mockSource = env.addSource(eventSource)
       val mockSink = MockKafkaSink(accumulatorName = "a1")
 
-      new FlinkPipeline(winConfMock, flinkConfMock).build(mockSource, _.addSink(mockSink))
+      new FlinkPipeline().build(mockSource, _.addSink(mockSink))
 
       val job = env.execute()
 
@@ -79,7 +69,7 @@ class FlinkConsumerSpec extends Specification with Matchers {
 
       // Could be created by scala-guice, but the configuration may change from test to test.
       // So it is not a good idea.
-      new FlinkPipeline(winConfMock, flinkConfMock).build(mockSource, _.addSink(mockSink))
+      new FlinkPipeline().build(mockSource, _.addSink(mockSink))
 
       val job = env.execute()
 

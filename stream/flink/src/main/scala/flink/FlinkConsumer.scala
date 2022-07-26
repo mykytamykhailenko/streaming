@@ -1,15 +1,13 @@
 package flink
 
 import com.google.inject.Guice
-import config.flink.TFlinkConf
-import config.kafka.TKafkaConf
-import config.window.TWinConf
+import flink.conf.FlinkConf
 import flink.pipeline.FlinkPipeline
 import flink.serde.FlinkDeserializer
 import flink.serde.FlinkSerializer.{keySer, valSer}
 import flink.util.Util.{EventTime, timestampAssigner, timestampRemover}
 import model.Metrics
-import org.apache.flink.api.common.eventtime.{TimestampAssigner, WatermarkStrategy}
+import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.connector.base.DeliveryGuarantee
 import org.apache.flink.connector.kafka.sink.{KafkaRecordSerializationSchema, KafkaSink}
 import org.apache.flink.connector.kafka.source.KafkaSource
@@ -29,28 +27,27 @@ object FlinkConsumer extends App {
 
 }
 
-class FlinkConsumer @Inject() (kafkaConf: TKafkaConf, flinkConf: TFlinkConf, winConf: TWinConf) {
+class FlinkConsumer @Inject() () {
 
-  import flinkConf._
-  import kafkaConf._
+  import FlinkConf._
 
   def execute(): Unit = {
 
     val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
 
-    env.enableCheckpointing(checkpointIntervalMS)
+    env.enableCheckpointing(checkpoint)
     env.getCheckpointConfig.setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE)
-    env.getCheckpointConfig.setCheckpointTimeout(checkpointTimeoutMS)
+    env.getCheckpointConfig.setCheckpointTimeout(checkpointTimeout)
     env.getCheckpointConfig.setCheckpointStorage(checkpointStorage)
 
-    env.getConfig.setAutoWatermarkInterval(autoWatermarkIntervalMS)
+    env.getConfig.setAutoWatermarkInterval(watermark)
 
     val kafkaSource =
       KafkaSource
         .builder[(EventTime, String, Metrics)]()
         .setBootstrapServers(kafkaServers)
-        .setTopics(kafkaTopic)
-        .setGroupId(flinkGroupId)
+        .setTopics(inTopic)
+        .setGroupId(groupId)
         .setDeserializer(FlinkDeserializer)
         .build()
 
@@ -61,22 +58,20 @@ class FlinkConsumer @Inject() (kafkaConf: TKafkaConf, flinkConf: TFlinkConf, win
     // The answer, the oldest watermark is selected.
     val watermarkStrategy =
       WatermarkStrategy
-        .forBoundedOutOfOrderness(Duration.ofMillis(maxOutOfOrderMS))
-        .withIdleness(Duration.ofMillis(idlenessMS))
+        .forBoundedOutOfOrderness(Duration.ofMillis(outOfOrder))
+        .withIdleness(Duration.ofMillis(idle))
         .withTimestampAssigner { _ =>
           timestampAssigner
         }
 
     val flinkSource =
       env
-        .fromSource(kafkaSource, watermarkStrategy, kafkaTopic)
+        .fromSource(kafkaSource, watermarkStrategy, inTopic)
         .map(timestampRemover)
 
     val transactionProperty = new Properties()
 
-    transactionProperty.put("transaction.timeout.ms", transactionTimeoutMS)
-
-    val targetKafkaTopic = s"flink-total-$kafkaTopic"
+    transactionProperty.put("transaction.timeout.ms", transactionTimeout)
 
     val sink =
       KafkaSink
@@ -87,7 +82,7 @@ class FlinkConsumer @Inject() (kafkaConf: TKafkaConf, flinkConf: TFlinkConf, win
         .setRecordSerializer(
           KafkaRecordSerializationSchema
             .builder()
-            .setTopic(targetKafkaTopic)
+            .setTopic(outTopic)
             .setKafkaKeySerializer(keySer.getClass)
             .setKafkaValueSerializer(valSer.getClass)
             .build())
@@ -95,7 +90,7 @@ class FlinkConsumer @Inject() (kafkaConf: TKafkaConf, flinkConf: TFlinkConf, win
         .build()
 
     // Another consideration https://stackoverflow.com/questions/63134231/which-set-checkpointing-interval-ms
-    // new FlinkPipeline(winConf, flinkConf).build(flinkSource, _.sinkTo(sink))
+    new FlinkPipeline().build(flinkSource, _.sinkTo(sink))
 
     env.execute()
   }

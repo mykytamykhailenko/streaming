@@ -1,7 +1,4 @@
 import com.google.inject.Guice
-import config.kafka.TKafkaConf
-import config.spark.TSparkConf
-import config.window.TWinConf
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.streaming.OutputMode
 import pipeline.SparkPipeline
@@ -14,17 +11,16 @@ object SparkConsumer extends App {
 
 }
 
-class SparkConsumer @Inject() (winConf: TWinConf, sparkConf: TSparkConf, kafkaConf: TKafkaConf) {
+class SparkConsumer @Inject() () {
 
   def start(): Unit = {
-    import sparkConf._
-    import kafkaConf._
+    import conf.SparkConf._
 
     val spark =
       SparkSession.builder()
         .master("local[*]") // Should be removed for deployment.
         .config("spark.streaming.receiver.writeAheadLog.enable", "true")
-        .config("spark.sql.streaming.checkpointLocation", sparkCheckpointLocation)
+        .config("spark.sql.streaming.checkpointLocation", checkpointLocation)
         .getOrCreate()
 
     val kafkaStream =
@@ -32,15 +28,15 @@ class SparkConsumer @Inject() (winConf: TWinConf, sparkConf: TSparkConf, kafkaCo
         .readStream
         .format("kafka")
         .option("kafka.bootstrap.servers", kafkaServers)
-        .option("kafka.group.id", sparkGroupId)
-        .option("subscribe", kafkaTopic)
+        .option("kafka.group.id", groupId)
+        .option("subscribe", inTopic)
         .load()
 
-    SparkPipeline(winConf, sparkConf).build(kafkaStream)
+    SparkPipeline().build(kafkaStream)
       .writeStream
       .format("kafka")
       .option("kafka.bootstrap.servers", kafkaServers)
-      .option("topic", s"spark-total-$kafkaTopic")
+      .option("topic", outTopic)
       .outputMode(OutputMode.Append()) // Does not create any output until the window is closed.
       .start()
       .awaitTermination()

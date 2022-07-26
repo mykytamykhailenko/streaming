@@ -1,8 +1,7 @@
 package kafka
 
 import com.google.inject.Guice
-import config.kafka.TKafkaConf
-import config.window.TWinConf
+import kafka.conf.KafkaConf
 import kafka.pipeline.TKafkaPipeline
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.common.IsolationLevel
@@ -17,21 +16,21 @@ object KafkaConsumer extends App {
 
 }
 
-class KafkaConsumer @Inject() (pipeline: TKafkaPipeline, winConf: TWinConf, kafkaConf: TKafkaConf) {
+class KafkaConsumer @Inject() (pipeline: TKafkaPipeline) {
 
   def start(): Unit = {
 
-    import kafkaConf._
+    import KafkaConf._
 
     val props = new Properties()
 
-    props.put(StreamsConfig.APPLICATION_ID_CONFIG, applicationId)
+    props.put(StreamsConfig.APPLICATION_ID_CONFIG, appId)
     props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaServers)
     props.put(StreamsConfig.PROCESSING_GUARANTEE_CONFIG, StreamsConfig.EXACTLY_ONCE_V2)
     props.put(StreamsConfig.STATE_DIR_CONFIG, stateDir)
     props.put(ConsumerConfig.ISOLATION_LEVEL_CONFIG, IsolationLevel.READ_COMMITTED)
 
-    val topology = pipeline.build(kafkaTopic, s"kafka-total-$kafkaTopic")
+    val topology = pipeline.build(inTopic, outTopic)
 
     val materializedStream = new KafkaStreams(topology, props)
 

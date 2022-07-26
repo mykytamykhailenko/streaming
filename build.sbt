@@ -82,9 +82,12 @@ val sparkDuplicates = Seq(
 
 ThisBuild / scalaVersion := "2.12.12"
 
+val confJavaOption = "-Dconfig.file=src/main/resources/test.conf"
+
 Test / parallelExecution := false
 
 ThisBuild / libraryDependencies ++= Seq(
+  "com.typesafe" % "config" % "1.4.2",
   "com.typesafe.play" %% "play-json" % "2.9.2",
   "io.github.azhur" %% "kafka-serde-play-json" % "0.6.5",
   "net.codingwell" %% "scala-guice" % "5.1.0",
@@ -96,14 +99,8 @@ lazy val model = (project in file("model"))
     name := "model"
   )
 
-lazy val config = (project in file("config"))
-  .settings(
-    name := "config",
-    libraryDependencies += "com.typesafe" % "config" % "1.4.2"
-  )
-
 lazy val producer = (project in file("producer"))
-  .dependsOn(model, config)
+  .dependsOn(model)
   .settings(
     name := "producer",
     assembly / mainClass := Some("Producer"),
@@ -115,12 +112,14 @@ lazy val producer = (project in file("producer"))
 val streamFile = file("stream")
 
 lazy val kafka = (project in (streamFile / "kafka"))
-  .dependsOn(model, config)
+  .dependsOn(model)
   .settings(
     name := "kafka",
     assembly / mainClass := Some("KafkaConsumer"),
     assembly / assemblyOutputPath := file("jars/kafka.jar"),
     assembly / assemblyMergeStrategy := discard(kafkaDuplicates: _*) orElse default,
+    Test / fork := true,
+    Test / javaOptions += confJavaOption,
     libraryDependencies ++= Seq(
       "org.apache.kafka" % "kafka-clients" % "3.2.0",
       "org.apache.kafka" % "kafka-streams" % "3.2.0",
@@ -129,12 +128,14 @@ lazy val kafka = (project in (streamFile / "kafka"))
   )
 
 lazy val flink = (project in (streamFile / "flink"))
-  .dependsOn(model, config)
+  .dependsOn(model)
   .settings(
     name := "flink",
     assembly / mainClass := Some("FlinkConsumer"),
     assembly / assemblyOutputPath := file("jars/flink.jar"),
     assembly / assemblyMergeStrategy := discard(flinkDuplicates: _*) orElse default,
+    Test / fork := true,
+    Test / javaOptions += confJavaOption,
     libraryDependencies ++= Seq(
       "org.apache.flink" % "flink-clients" % "1.15.1",
       "org.apache.flink" %% "flink-streaming-scala" % "1.15.1",
@@ -143,7 +144,7 @@ lazy val flink = (project in (streamFile / "flink"))
   )
 
 lazy val spark = (project in (streamFile / "spark"))
-  .dependsOn(model, config)
+  .dependsOn(model)
   .settings(
     name := "spark",
     assembly / mainClass := Some("SparkConsumer"),
@@ -153,6 +154,8 @@ lazy val spark = (project in (streamFile / "spark"))
         first(sparkFirst: _*) orElse
         discard(sparkDuplicates: _*) orElse
         default,
+    Test / fork := true,
+    Test / javaOptions += confJavaOption,
     libraryDependencies ++= Seq(
       "org.apache.spark" %% "spark-core" % "3.2.1",
       "org.apache.spark" %% "spark-sql" % "3.2.1",
