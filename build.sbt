@@ -136,10 +136,10 @@ lazy val flink = (project in (streamFile / "flink"))
     assembly / assemblyOutputPath := file("jars/flink.jar"),
     assembly / assemblyMergeStrategy := discard(flinkDuplicates: _*) orElse default,
     libraryDependencies ++= Seq(
-      "org.apache.flink" % "flink-clients" % "1.15.0",
-      "org.apache.flink" %% "flink-streaming-scala" % "1.15.0",
-      "org.apache.flink" % "flink-connector-kafka" % "1.15.0",
-      "org.apache.flink" % "flink-test-utils" % "1.15.0" % Test)
+      "org.apache.flink" % "flink-clients" % "1.15.1",
+      "org.apache.flink" %% "flink-streaming-scala" % "1.15.1",
+      "org.apache.flink" % "flink-connector-kafka" % "1.15.1",
+      "org.apache.flink" % "flink-test-utils" % "1.15.1" % Test)
   )
 
 lazy val spark = (project in (streamFile / "spark"))

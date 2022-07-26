@@ -39,10 +39,10 @@ class SparkConsumerSpec extends Specification with Matchers {
 
       val events = Seq(
         (10L, "machine", Metrics(1, 1)),
-        (50L, "machine", Metrics(1, 1)),
-        (20L, "machine", Metrics(1, 1)),
-        (60L, "machine", Metrics(1, 1)),
-        (90L, "watermark", Metrics(1, 1)))
+        (50L, "machine", Metrics(5, 5)),
+        (20L, "machine", Metrics(3, 3)),
+        (60L, "machine", Metrics(13, 13)),
+        (1000L, "watermark", Metrics(1, 1)))
 
       val serializedEvents = events.map { case (timestamp, machine, metrics) =>
         (Timestamp.from(Instant.ofEpochSecond(timestamp)), machine.getBytes, serialize(metrics))
@@ -80,8 +80,11 @@ class SparkConsumerSpec extends Specification with Matchers {
         (-10, "machine", Metrics(1, 1)),
         (0, "machine", Metrics(2, 2)),
         (10, "machine", Metrics(2, 2)),
-        (20, "machine", Metrics(1, 1)),
-        (30, "machine", Metrics(1, 1)))
+        (20, "machine", Metrics(3, 3)),
+        (30, "machine", Metrics(5, 5)),
+        (40, "machine", Metrics(9, 9)),
+        (50, "machine", Metrics(9, 9)),
+        (60, "machine", Metrics(13, 13)))
     }
   }
 

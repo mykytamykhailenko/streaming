@@ -2,6 +2,7 @@ package flink.pipeline
 
 import config.flink.TFlinkConf
 import config.window.TWinConf
+import flink.util.Util.theOnlySample
 import model.Metrics
 import org.apache.flink.streaming.api.datastream.DataStreamSink
 import org.apache.flink.streaming.api.scala.extensions.acceptPartialFunctions
@@ -20,12 +21,15 @@ class FlinkPipeline @Inject()(winConf: TWinConf, flinkConf: TFlinkConf) extends 
 
     val pipeline =
       source
+        .mapWith { case (machine, metrics) => (machine, metrics, theOnlySample) }
         .keyBy(_._1)
         .window(slidingWindow)
         .allowedLateness(Time.milliseconds(flinkConf.allowedLatenessMS))
-        .reduceWith { case ((machine, left), (_, right)) =>
-          machine -> (left + right)
+        .reduceWith { case ((machine, left, lc), (_, right, rc)) =>
+          (machine, left + right, lc + rc)
         }
+        .mapWith { case (machine, metrics, count) => machine -> (metrics / count) }
+
 
     sink(pipeline)
   }

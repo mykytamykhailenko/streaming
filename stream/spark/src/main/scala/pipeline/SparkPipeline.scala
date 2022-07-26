@@ -3,7 +3,7 @@ package pipeline
 import config.spark.TSparkConf
 import config.window.TWinConf
 import org.apache.spark.sql.DataFrame
-import org.apache.spark.sql.functions.{col, struct, window}
+import org.apache.spark.sql.functions.{avg, col, struct, window}
 import org.apache.spark.sql.types.LongType
 import udf.UDFs._
 
@@ -32,12 +32,11 @@ case class SparkPipeline @Inject()(winConf: TWinConf, sparkConf: TSparkConf) ext
           ofMilliseconds(windowStep)),
         col("machine"))
       .agg(
-        combineMetrics(
-          col("metrics.cpu"),
-          col("metrics.ram")).alias("metrics"))
+          avg("metrics.cpu").as("cpu"),
+          avg("metrics.ram").as("ram"))
       .select(
         col("window.start").as("timestamp"),
         col("machine").as("key"),
-        serializeMetrics(col("metrics")).as("value"))
+        serializeMetrics(struct("cpu", "ram")).as("value"))
   }
 }

@@ -4,7 +4,7 @@ import config.kafka.TKafkaConf
 import config.window.TWinConf
 import io.github.azhur.kafkaserdeplayjson.PlayJsonSupport._
 import kafka.util.Util.eventTimeExtractorSupplier
-import model.Metrics
+import model.{AverageMetrics, Metrics}
 import org.apache.kafka.streams.Topology
 import org.apache.kafka.streams.kstream.Suppressed.BufferConfig.unbounded
 import org.apache.kafka.streams.kstream.{Suppressed, TimeWindows}
@@ -28,7 +28,7 @@ class KafkaPipeline @Inject() (winConf: TWinConf, kafkaConf: TKafkaConf) extends
     builder.stream[String, Metrics](inputTopic)
       .groupByKey
       .windowedBy(thumbingWindow)
-      .reduce(_ + _)
+      .aggregate(AverageMetrics())((_, metrics, average) => average + metrics)
       .suppress(Suppressed.untilWindowCloses(unbounded()))
       .toStream
       .transform(eventTimeExtractorSupplier)

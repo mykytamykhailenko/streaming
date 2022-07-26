@@ -7,6 +7,8 @@ object Util {
 
   type EventTime = Long
 
+  val theOnlySample = 1
+
   val timestampAssigner: TimestampAssigner[(EventTime, String, Metrics)] =
     (element: (EventTime, String, Metrics), _: Long) => {
       val (eventTime, _, _) = element

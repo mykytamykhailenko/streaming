@@ -95,7 +95,7 @@ class FlinkConsumer @Inject() (kafkaConf: TKafkaConf, flinkConf: TFlinkConf, win
         .build()
 
     // Another consideration https://stackoverflow.com/questions/63134231/which-set-checkpointing-interval-ms
-    new FlinkPipeline(winConf, flinkConf).build(flinkSource, _.sinkTo(sink))
+    // new FlinkPipeline(winConf, flinkConf).build(flinkSource, _.sinkTo(sink))
 
     env.execute()
   }

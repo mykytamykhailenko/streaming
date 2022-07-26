@@ -7,6 +7,7 @@ import org.apache.flink.api.common.accumulators.ListAccumulator
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.sink.{RichSinkFunction, SinkFunction}
 
+import java.util
 import scala.collection.convert.ImplicitConversions.`collection AsScalaIterable`
 
 case class MockKafkaSink(accumulatorName: String) extends RichSinkFunction[(String, Metrics)] {
@@ -20,8 +21,8 @@ case class MockKafkaSink(accumulatorName: String) extends RichSinkFunction[(Stri
     getRuntimeContext.getAccumulator(accumulatorName).add((context.timestamp(), machine, metrics))
   }
 
-  def getResults(jobResult: JobExecutionResult): Set[(EventTime, String, Metrics)] = {
-    jobResult.getAccumulatorResult(accumulatorName).asInstanceOf[java.util.ArrayList[(EventTime, String, Metrics)]].toSet
+  def getResults(jobResult: JobExecutionResult): List[(EventTime, String, Metrics)] = {
+    jobResult.getAccumulatorResult(accumulatorName).asInstanceOf[util.ArrayList[(EventTime, String, Metrics)]].toList
   }
 
 }
