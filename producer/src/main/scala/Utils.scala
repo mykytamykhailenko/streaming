@@ -1,17 +1,14 @@
-import config.kafka.TKafkaConf
 import model.Metrics
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 
 import scala.annotation.tailrec
 import scala.util.Random
-import config.producer.TProducerConf
 
 import javax.inject.Inject
 
-class Utils @Inject() (kafkaConf: TKafkaConf, producerConfig: TProducerConf) {
+class Utils @Inject() () {
 
-  import producerConfig._
-  import kafkaConf._
+  import ProducerConf._
 
   def randomBigDecimal(): BigDecimal = BigDecimal(Random.nextInt(90) + 10)
 
@@ -21,7 +18,7 @@ class Utils @Inject() (kafkaConf: TKafkaConf, producerConfig: TProducerConf) {
 
   def getRandomMachines(): Seq[String] = {
     for {
-      _ <- 1 to machineNum
+      _ <- 1 to machines
     } yield Random.alphanumeric.take(5).mkString("")
   }
 

@@ -1,9 +1,7 @@
 import com.google.inject.Guice
-import config.kafka.TKafkaConf
-import config.producer.TProducerConf
 import io.github.azhur.kafkaserdeplayjson.PlayJsonSupport.toSerializer
 import model.Metrics
-import org.apache.kafka.clients.producer.{KafkaProducer, ProducerConfig, ProducerRecord}
+import org.apache.kafka.clients.producer.{KafkaProducer, ProducerConfig}
 import org.apache.kafka.common.serialization.Serializer
 
 import java.util.Properties
@@ -16,12 +14,11 @@ object Producer extends App {
 
 }
 
-class Producer @Inject() (kafkaConf: TKafkaConf, producerConf: TProducerConf, util: Utils) {
+class Producer @Inject() (util: Utils) {
 
   def start(): Unit = {
 
-    import kafkaConf._
-    import producerConf._
+    import ProducerConf._
 
     val props = new Properties()
 
@@ -38,9 +35,9 @@ class Producer @Inject() (kafkaConf: TKafkaConf, producerConf: TProducerConf, ut
 
     props.put(ProducerConfig.BATCH_SIZE_CONFIG, batchSize)
 
-    props.put("partition", producerConf.partition)
+    props.put("partition", partition)
 
-    props.put("topic.partition", kafkaConf.kafkaTopic)
+    props.put("topic.partition", kafkaTopic)
 
     // How many times the producer retries the request.
     // props.put(ProducerConfig.RETRIES_CONFIG, Int.MaxValue)
