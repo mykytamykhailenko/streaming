@@ -1,6 +1,6 @@
 package flink.serde
 
-import flink.util.Util.EventTime
+import flink.util.Util.{EventTime, Machine}
 import model.Metrics
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.connector.kafka.source.reader.deserializer.KafkaRecordDeserializationSchema
@@ -8,11 +8,11 @@ import org.apache.flink.util.Collector
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import play.api.libs.json.{Json, Reads}
 
-object FlinkDeserializer extends KafkaRecordDeserializationSchema[(EventTime, String, Metrics)] {
+object FlinkDeserializer extends KafkaRecordDeserializationSchema[(EventTime, Machine, Metrics)] {
 
   private[this] def deserializeInputByteArray[T](input: Array[Byte])(implicit reads: Reads[T]): T = reads.reads(Json.parse(input)).get
 
-  def deserialize(record: ConsumerRecord[Array[Byte], Array[Byte]], out: Collector[(EventTime, String, Metrics)]): Unit = {
+  def deserialize(record: ConsumerRecord[Array[Byte], Array[Byte]], out: Collector[(EventTime, Machine, Metrics)]): Unit = {
 
     val key = deserializeInputByteArray[String](record.key())
     val value = deserializeInputByteArray[Metrics](record.value())
@@ -20,6 +20,6 @@ object FlinkDeserializer extends KafkaRecordDeserializationSchema[(EventTime, St
     out.collect((record.timestamp(), key, value))
   }
 
-  def getProducedType: TypeInformation[(EventTime, String, Metrics)] = TypeInformation.of(classOf[(EventTime, String, Metrics)])
+  def getProducedType: TypeInformation[(EventTime, Machine, Metrics)] = TypeInformation.of(classOf[(EventTime, Machine, Metrics)])
 
 }

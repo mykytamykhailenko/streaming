@@ -1,36 +1,49 @@
 package flink.pipeline
 
 import flink.conf.FlinkConf
-import flink.util.Util.theOnlySample
+import flink.util.Util.Machine
 import model.Metrics
 import org.apache.flink.streaming.api.datastream.DataStreamSink
-import org.apache.flink.streaming.api.scala.extensions.acceptPartialFunctions
+import org.apache.flink.streaming.api.scala.function.ProcessWindowFunction
 import org.apache.flink.streaming.api.scala.{DataStream, createTypeInformation}
-import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindows
+import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows
 import org.apache.flink.streaming.api.windowing.time.Time
+import org.apache.flink.streaming.api.windowing.windows.TimeWindow
+import org.apache.flink.util.Collector
 
 import javax.inject.Inject
 
-class FlinkPipeline @Inject() () extends TFlinkPipeline[(String, Metrics), (String, Metrics)] {
+class FlinkPipeline @Inject()() extends TFlinkPipeline[(String, Metrics), (String, Metrics)] {
 
   import FlinkConf._
 
-  override def build(source: DataStream[(String, Metrics)],
-                     sink: DataStream[(String, Metrics)] => DataStreamSink[(String, Metrics)]): DataStreamSink[(String, Metrics)] = {
+  override def build(source: DataStream[(Machine, Metrics)],
+                     sink: DataStream[(Machine, Metrics)] => DataStreamSink[(Machine, Metrics)]): DataStreamSink[(Machine, Metrics)] = {
 
-    val slidingWindow = SlidingEventTimeWindows.of(Time.milliseconds(windowSize), Time.milliseconds(windowStep))
+    val averageMetrics = new ProcessWindowFunction[(Machine, Metrics), (Machine, Metrics), String, TimeWindow]  {
+
+      override def process(key: String,
+                           context: Context,
+                           elements: Iterable[(Machine, Metrics)],
+                           out: Collector[(Machine, Metrics)]): Unit = {
+
+        val noMetrics = (key, Metrics(0, 0), 0)
+
+        val (machine, totalMetrics, totalSamples) = elements.foldRight(noMetrics) {
+          case ((_, metrics), (machine, accMetrics, accSamples)) =>
+            (machine, accMetrics + metrics, accSamples + 1)
+        }
+
+        out.collect((machine, totalMetrics / totalSamples))
+      }
+    }
 
     val pipeline =
       source
-        .mapWith { case (machine, metrics) => (machine, metrics, theOnlySample) }
         .keyBy(_._1)
-        .window(slidingWindow)
+        .window(TumblingEventTimeWindows.of(Time.milliseconds(windowSize)))
         .allowedLateness(Time.milliseconds(allowedLateness))
-        .reduceWith { case ((machine, left, lc), (_, right, rc)) =>
-          (machine, left + right, lc + rc)
-        }
-        .mapWith { case (machine, metrics, count) => machine -> (metrics / count) }
-
+        .process(averageMetrics)
 
     sink(pipeline)
   }

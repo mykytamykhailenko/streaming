@@ -1,6 +1,6 @@
 package util
 
-import flink.util.Util.EventTime
+import flink.util.Util.{EventTime, Machine}
 import model.Metrics
 import org.apache.flink.api.common.JobExecutionResult
 import org.apache.flink.api.common.accumulators.ListAccumulator
@@ -10,19 +10,19 @@ import org.apache.flink.streaming.api.functions.sink.{RichSinkFunction, SinkFunc
 import java.util
 import scala.collection.convert.ImplicitConversions.`collection AsScalaIterable`
 
-case class MockKafkaSink(accumulatorName: String) extends RichSinkFunction[(String, Metrics)] {
+case class MockKafkaSink(accumulatorName: String) extends RichSinkFunction[(Machine, Metrics)] {
 
   override def open(parameters: Configuration): Unit = {
-    getRuntimeContext.addAccumulator(accumulatorName, new ListAccumulator[(EventTime, String, Metrics)]())
+    getRuntimeContext.addAccumulator(accumulatorName, new ListAccumulator[(EventTime, Machine, Metrics)]())
   }
 
-  override def invoke(value: (String, Metrics), context: SinkFunction.Context): Unit = {
+  override def invoke(value: (Machine, Metrics), context: SinkFunction.Context): Unit = {
     val (machine, metrics) = value
     getRuntimeContext.getAccumulator(accumulatorName).add((context.timestamp(), machine, metrics))
   }
 
-  def getResults(jobResult: JobExecutionResult): List[(EventTime, String, Metrics)] = {
-    jobResult.getAccumulatorResult(accumulatorName).asInstanceOf[util.ArrayList[(EventTime, String, Metrics)]].toList
+  def getResults(jobResult: JobExecutionResult): List[(EventTime, Machine, Metrics)] = {
+    jobResult.getAccumulatorResult(accumulatorName).asInstanceOf[util.ArrayList[(EventTime, Machine, Metrics)]].toList
   }
 
 }

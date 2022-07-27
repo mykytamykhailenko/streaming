@@ -5,7 +5,7 @@ import flink.conf.FlinkConf
 import flink.pipeline.FlinkPipeline
 import flink.serde.FlinkDeserializer
 import flink.serde.FlinkSerializer.{keySer, valSer}
-import flink.util.Util.{EventTime, timestampAssigner, timestampRemover}
+import flink.util.Util.{EventTime, Machine, timestampAssigner, timestampRemover}
 import model.Metrics
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.connector.base.DeliveryGuarantee
@@ -44,7 +44,7 @@ class FlinkConsumer @Inject() () {
 
     val kafkaSource =
       KafkaSource
-        .builder[(EventTime, String, Metrics)]()
+        .builder[(EventTime, Machine, Metrics)]()
         .setBootstrapServers(kafkaServers)
         .setTopics(inTopic)
         .setGroupId(groupId)
