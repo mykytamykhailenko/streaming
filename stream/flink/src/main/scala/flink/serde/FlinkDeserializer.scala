@@ -1,7 +1,7 @@
 package flink.serde
 
+import flink.model.Metrics
 import flink.util.Util.{EventTime, Machine}
-import model.Metrics
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.connector.kafka.source.reader.deserializer.KafkaRecordDeserializationSchema
 import org.apache.flink.util.Collector

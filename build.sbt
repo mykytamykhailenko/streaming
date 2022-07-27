@@ -94,13 +94,7 @@ ThisBuild / libraryDependencies ++= Seq(
   "org.specs2" %% "specs2-core" % "4.16.0" % Test,
   "org.mockito" %% "mockito-scala" % "1.17.7" % Test)
 
-lazy val model = (project in file("model"))
-  .settings(
-    name := "model"
-  )
-
 lazy val producer = (project in file("producer"))
-  .dependsOn(model)
   .settings(
     name := "producer",
     assembly / mainClass := Some("Producer"),
@@ -112,7 +106,6 @@ lazy val producer = (project in file("producer"))
 val streamFile = file("stream")
 
 lazy val kafka = (project in (streamFile / "kafka"))
-  .dependsOn(model)
   .settings(
     name := "kafka",
     assembly / mainClass := Some("KafkaConsumer"),
@@ -128,7 +121,6 @@ lazy val kafka = (project in (streamFile / "kafka"))
   )
 
 lazy val flink = (project in (streamFile / "flink"))
-  .dependsOn(model)
   .settings(
     name := "flink",
     assembly / mainClass := Some("FlinkConsumer"),
@@ -144,7 +136,6 @@ lazy val flink = (project in (streamFile / "flink"))
   )
 
 lazy val spark = (project in (streamFile / "spark"))
-  .dependsOn(model)
   .settings(
     name := "spark",
     assembly / mainClass := Some("SparkConsumer"),

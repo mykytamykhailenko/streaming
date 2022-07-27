@@ -1,4 +1,4 @@
-package model
+package kafka.model
 
 import play.api.libs.json.{Format, Json}
 

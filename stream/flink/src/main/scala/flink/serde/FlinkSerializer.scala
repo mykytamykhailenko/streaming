@@ -1,8 +1,8 @@
 package flink.serde
 
+import flink.model.Metrics
 import flink.util.Util.Machine
 import io.github.azhur.kafkaserdeplayjson.PlayJsonSupport.toSerializer
-import model.Metrics
 import org.apache.kafka.common.serialization.Serializer
 
 object FlinkSerializer {

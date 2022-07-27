@@ -1,7 +1,7 @@
 package util
 
+import flink.model.Metrics
 import flink.util.Util.{EventTime, Machine}
-import model.Metrics
 import org.apache.flink.api.common.JobExecutionResult
 import org.apache.flink.api.common.accumulators.ListAccumulator
 import org.apache.flink.configuration.Configuration

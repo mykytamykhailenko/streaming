@@ -3,7 +3,6 @@ import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 
 import scala.annotation.tailrec
 import scala.util.Random
-
 import javax.inject.Inject
 
 class Utils @Inject() () {

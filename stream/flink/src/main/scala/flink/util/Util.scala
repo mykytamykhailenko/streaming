@@ -1,6 +1,6 @@
 package flink.util
 
-import model.Metrics
+import flink.model.Metrics
 import org.apache.flink.api.common.eventtime.TimestampAssigner
 
 object Util {

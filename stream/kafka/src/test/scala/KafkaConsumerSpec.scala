@@ -1,6 +1,6 @@
 import io.github.azhur.kafkaserdeplayjson.PlayJsonSupport._
+import kafka.model.Metrics
 import kafka.pipeline.KafkaPipeline
-import model.Metrics
 import org.apache.kafka.common.serialization.{Deserializer, Serializer}
 import org.apache.kafka.streams.test.TestRecord
 import org.apache.kafka.streams.{TestInputTopic, TestOutputTopic, TopologyTestDriver}

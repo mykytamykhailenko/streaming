@@ -1,7 +1,7 @@
 import flink.conf.FlinkConf
+import flink.model.Metrics
 import flink.pipeline.FlinkPipeline
 import flink.util.Util.{EventTime, Machine}
-import model.Metrics
 import org.apache.flink.api.scala.createTypeInformation
 import org.apache.flink.runtime.testutils.MiniClusterResourceConfiguration
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment

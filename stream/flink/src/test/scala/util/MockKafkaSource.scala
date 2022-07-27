@@ -1,10 +1,10 @@
 package util
 
 import flink.util.Util.{EventTime, Machine}
-import model.Metrics
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.watermark.Watermark
 import flink.conf.FlinkConf.outOfOrder
+import flink.model.Metrics
 
 import scala.annotation.tailrec
 

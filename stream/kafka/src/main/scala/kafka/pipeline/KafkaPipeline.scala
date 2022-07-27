@@ -2,13 +2,13 @@ package kafka.pipeline
 
 import io.github.azhur.kafkaserdeplayjson.PlayJsonSupport._
 import kafka.util.Util.eventTimeExtractorSupplier
-import model.{AverageMetrics, Metrics}
 import org.apache.kafka.streams.Topology
 import org.apache.kafka.streams.kstream.Suppressed.BufferConfig.unbounded
 import org.apache.kafka.streams.kstream.{Suppressed, TimeWindows}
 import org.apache.kafka.streams.scala.ImplicitConversions._
 import org.apache.kafka.streams.scala.StreamsBuilder
 import kafka.conf.KafkaConf
+import kafka.model.{AverageMetrics, Metrics}
 
 import java.time.Duration
 import javax.inject.Inject

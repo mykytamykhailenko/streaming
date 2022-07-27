@@ -1,8 +1,8 @@
 package flink.pipeline
 
 import flink.conf.FlinkConf
+import flink.model.Metrics
 import flink.util.Util.Machine
-import model.Metrics
 import org.apache.flink.streaming.api.datastream.DataStreamSink
 import org.apache.flink.streaming.api.scala.function.ProcessWindowFunction
 import org.apache.flink.streaming.api.scala.{DataStream, createTypeInformation}

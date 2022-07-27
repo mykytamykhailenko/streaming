@@ -1,6 +1,6 @@
 package kafka.util
 
-import model.{AverageMetrics, Metrics}
+import kafka.model.{AverageMetrics, Metrics}
 import org.apache.kafka.streams.KeyValue
 import org.apache.kafka.streams.kstream.{Transformer, TransformerSupplier, Windowed}
 import org.apache.kafka.streams.processor.{ProcessorContext, To}
